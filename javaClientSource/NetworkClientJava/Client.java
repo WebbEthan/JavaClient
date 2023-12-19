@@ -81,20 +81,29 @@ public class Client
         packet.Write(Username);
         SendData(packet, ProtocalType.TCP);
     }
+    public void LeaveMatch()
+    {
+        Packet packet = new Packet((byte)-4);
+        SendData(packet, ProtocalType.TCP);
+    }
     // Disconnects from the server
     public void Disconnect()
     {
         try 
         {
             _tcpProtocal.Disconnect();
-            _udpProtocal.Disconnect();
+            ThreadManager.SubscribedToNetworkThread.remove(0);
+            if (_udpProtocal != null)
+            {
+                _udpProtocal.Disconnect();
+            }
             _tcpProtocal = null;
             _udpProtocal = null;
             System.out.println("Disconnected");
         } 
         catch (Exception ex)
         {
-            System.err.println("Unable to disconnect: " + ex);
+            System.err.println("Disconnection Error: " + ex);
         }
     }
     // After successful connection this create the UDP class and runs authentication
@@ -130,24 +139,14 @@ public class Client
         {
             try 
             {
-                // detects disconnection
-                if (!_socket.isConnected())
-                {
-                    _reference.Disconnect();
-                    ThreadManager.SubscribedToNetworkThread.remove(0);
-                }
-                // detects data
-                int length = _inputStream.available();
-                if (0 < length)
-                {
-                    // assembles data
-                    byte[] data = _inputStream.readNBytes(length);
-                    _handleData(new Packet(data));
-                }
+                // detects data and assembles data
+                byte[] data = _inputStream.readAllBytes();
+                _handleData(new Packet(data));
             }
             catch (Exception ex)
             {
-                System.err.println("Error recieveing TCP data: " + ex);
+                // Disconnects
+                _reference.Disconnect();
             }
         }
         private void _handleData(Packet packet)

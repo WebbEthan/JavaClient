@@ -12,7 +12,7 @@ public class Packet
         PacketType = data[0];
         if (data.length > 1)
         {
-            Data = Arrays.copyOfRange(data, 1, data.length-1);
+            Data = Arrays.copyOfRange(data, 1, data.length);
         }
         //DisplayBytes(data);
     }
