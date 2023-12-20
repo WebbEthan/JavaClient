@@ -6,6 +6,8 @@ import java.util.*;
 import java.io.*;
 public class Client
 {
+    private Boolean _active = false;
+    public Boolean IsActive() { return _active; }
     private String _ip;
     private int _port;
     public String CurrentMatchCode;
@@ -26,6 +28,7 @@ public class Client
         try 
         {
             // Starts TCP
+            _active = true;
             _tcpProtocal = new _tcp(ip, port, this);   
         } catch (Exception ex)
         {
@@ -89,28 +92,34 @@ public class Client
     // Disconnects from the server
     public void Disconnect()
     {
-        try 
+        if (_active)
         {
-            _tcpProtocal.Disconnect();
-            ThreadManager.SubscribedToNetworkThread.remove(0);
-            if (_udpProtocal != null)
+            try 
             {
-                _udpProtocal.Disconnect();
+                _tcpProtocal.Disconnect();
+                ThreadManager.SubscribedToNetworkThread.clear();
+                if (_udpProtocal != null)
+                {
+                    _udpProtocal.Disconnect();
+                }
+                ThreadManager.SubscribedToNetworkUDPThread.clear();
+                _tcpProtocal = null;
+                _udpProtocal = null;
+                OnDisconnect();
+                System.out.println("Disconnected");
+                _active = false;
+            } 
+            catch (Exception ex)
+            {
+                System.err.println("Disconnection Error: " + ex);
             }
-            _tcpProtocal = null;
-            _udpProtocal = null;
-            System.out.println("Disconnected");
-        } 
-        catch (Exception ex)
-        {
-            System.err.println("Disconnection Error: " + ex);
         }
     }
     // After successful connection this create the UDP class and runs authentication
     private void _connectionCallback(int partialClientID)
     {
         System.out.println("Setting Up UDP");
-        _udpProtocal = new _udp(_ip, _port, partialClientID);
+        _udpProtocal = new _udp(_ip, _port, partialClientID, this);
     }
     private _tcp _tcpProtocal;
     private _udp _udpProtocal;
@@ -137,16 +146,33 @@ public class Client
         }
         private void _recieveData()
         {
-            try 
+            if (_active)
             {
-                // detects data and assembles data
-                byte[] data = _inputStream.readAllBytes();
-                _handleData(new Packet(data));
-            }
-            catch (Exception ex)
-            {
-                // Disconnects
-                _reference.Disconnect();
+                try 
+                {
+                    // Checks for disconnection and waits for data
+                    byte connectionCheck = _inputStream.readByte();
+                    byte[] data;
+                    // detects data and assembles data
+                    if (_inputStream.available() > 0)
+                    {
+                        // Reads the rest of the data
+                        byte[] restOfData = _inputStream.readNBytes(_inputStream.available());
+                        data = new byte[restOfData.length + 1];
+                        System.arraycopy(new byte[] { connectionCheck }, 0, data, 0, 1);
+                        System.arraycopy(restOfData, 0, data, 1, restOfData.length);
+                    }
+                    else
+                    {
+                        data = new byte[] { connectionCheck };
+                    }
+                    _handleData(new Packet(data));
+                }
+                catch (Exception ex)
+                {
+                    // Disconnects
+                    _reference.Disconnect();
+                }
             }
         }
         private void _handleData(Packet packet)
@@ -229,12 +255,14 @@ public class Client
     }
     private class _udp
     {
+        private Client _reference;
         private DatagramSocket _socket;
         private InetAddress _address;
-        public _udp(String ip, int port, int partialClientID)
+        public _udp(String ip, int port, int partialClientID, Client reference)
         {
             try 
             {
+                _reference = reference;
                 _address = InetAddress.getByName(ip);
                 _socket = new DatagramSocket();
                 // Starts listening for UDP data
@@ -271,7 +299,7 @@ public class Client
             }
             catch (Exception ex)
             {
-                System.out.println(ex);
+                _reference.Disconnect();
             }
         }
         public void Disconnect()
