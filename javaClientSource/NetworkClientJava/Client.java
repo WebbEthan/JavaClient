@@ -96,6 +96,7 @@ public class Client
         {
             try 
             {
+                _active = false;
                 _tcpProtocal.Disconnect();
                 ThreadManager.SubscribedToNetworkThread.clear();
                 if (_udpProtocal != null)
@@ -107,7 +108,6 @@ public class Client
                 _udpProtocal = null;
                 OnDisconnect();
                 System.out.println("Disconnected");
-                _active = false;
             } 
             catch (Exception ex)
             {

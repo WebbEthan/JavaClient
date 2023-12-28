@@ -21,13 +21,13 @@ public class MessangerApp extends Client
     protected void OnMatchJoin()
     {
         System.out.println("Write a message or type /quit to disconnect.");
+        Scanner consoleReader = new Scanner(System.in);
         while (true)
         {
-            Scanner consoleReader = new Scanner(System.in);
             String msg = consoleReader.nextLine();
             if (!msg.isEmpty())
             {
-                if (msg == "/quit")
+                if (msg.equals("/quit"))
                 {
                     Disconnect();
                     consoleReader.close();
@@ -38,7 +38,6 @@ public class MessangerApp extends Client
                 SendData(packet, ProtocalType.TCP);
             }
         }
-        
     }
     private void _msg(Packet packet, ProtocalType protocalType)
     {
