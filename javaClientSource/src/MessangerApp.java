@@ -14,6 +14,10 @@ public class MessangerApp extends Client
         // Joins match
         JoinMatch();
     }
+    protected void OnMatchKicked()
+    {
+        JoinMatch();
+    }
     protected void OnDisconnect()
     {
         ThreadManager.StopThreads();

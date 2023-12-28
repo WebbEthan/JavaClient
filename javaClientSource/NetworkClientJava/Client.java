@@ -66,9 +66,11 @@ public class Client
     protected void OnAuthentication() {}
     // Called when you join a match
     protected void OnMatchJoin() {}
+    // Called when you are kicked from a match
+    protected void OnMatchKicked() {}
     // Called when the sockets are closed
     protected void OnDisconnect() {}
-    // Tel;s the server to put you in a random match
+    // Tells the server to put you in a random match
     public void JoinMatch()
     {
         Packet packet = new Packet((byte)-1);
@@ -193,7 +195,7 @@ public class Client
                         }
                         else
                         {
-                            if (packet.PacketType == -1)
+                            if (packet.PacketType == 0xff)
                             {
                                 // Reads data when match is joined
                                 _reference.CurrentMatchCode = packet.ReadString();
@@ -207,21 +209,27 @@ public class Client
                                 System.out.printf("Joined Match %s\n", _reference.CurrentMatchCode);
                                 ThreadManager.ToExecuteOnApplicationThread.add(() -> { _reference.OnMatchJoin(); });
                             }
-                            else if (packet.PacketType == -2)
+                            else if (packet.PacketType == 0xfe)
                             {
                                 // New Client in match data
                                 _reference.AddClient(packet.ReadString());
                             }
-                            else if (packet.PacketType == -3)
+                            else if (packet.PacketType == 0xfd)
                             {
                                 // Authentication callback
                                 System.out.println("Succesfully Authenticated");
                                 ThreadManager.ToExecuteOnApplicationThread.add(() -> { _reference.OnAuthentication(); });
                             }
-                            else if (packet.PacketType == -4)
+                            else if (packet.PacketType == 0xfc)
                             {
                                 // Client left your match
                                 _reference.RemoveClient(packet.ReadString());
+                            }
+                            else if (packet.PacketType ==0xfb)
+                            {
+
+                                System.out.println("You were kicked from the match reason : " + packet.ReadString());
+                                _reference.OnMatchKicked();
                             }
                             else
                             {
