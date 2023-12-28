@@ -195,7 +195,7 @@ public class Client
                         }
                         else
                         {
-                            if (packet.PacketType == 0xff)
+                            if (packet.PacketType == -1)
                             {
                                 // Reads data when match is joined
                                 _reference.CurrentMatchCode = packet.ReadString();
@@ -209,25 +209,25 @@ public class Client
                                 System.out.printf("Joined Match %s\n", _reference.CurrentMatchCode);
                                 ThreadManager.ToExecuteOnApplicationThread.add(() -> { _reference.OnMatchJoin(); });
                             }
-                            else if (packet.PacketType == 0xfe)
+                            else if (packet.PacketType == -2)
                             {
                                 // New Client in match data
                                 _reference.AddClient(packet.ReadString());
                             }
-                            else if (packet.PacketType == 0xfd)
+                            else if (packet.PacketType == -3)
                             {
                                 // Authentication callback
                                 System.out.println("Succesfully Authenticated");
                                 ThreadManager.ToExecuteOnApplicationThread.add(() -> { _reference.OnAuthentication(); });
                             }
-                            else if (packet.PacketType == 0xfc)
+                            else if (packet.PacketType == -4)
                             {
                                 // Client left your match
                                 _reference.RemoveClient(packet.ReadString());
                             }
-                            else if (packet.PacketType ==0xfb)
+                            else if (packet.PacketType == -5)
                             {
-
+                                // Kicked from the current match
                                 System.out.println("You were kicked from the match reason : " + packet.ReadString());
                                 _reference.OnMatchKicked();
                             }
